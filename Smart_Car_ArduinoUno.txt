@@ -1,0 +1,99 @@
+#include <Wire.h>
+
+#define speedL 10
+#define IN1 9
+#define IN2 8
+#define IN3 7
+#define IN4 6
+#define speedR 5
+#define trig 11
+#define echo 4
+
+long duration, distance;
+
+void setup() {
+  for (int i = 5; i <= 11; i++) {
+    pinMode(i, OUTPUT);
+  }
+  pinMode(echo, INPUT);
+  Serial.begin(9600);  // Initialize serial communication with ESP32
+}
+
+void Ultrasonic() {
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+  duration = pulseIn(echo, HIGH);
+  distance = (duration / 2) * 0.0343;
+  delay(5);
+}
+
+void forward() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(speedL, 75);
+  analogWrite(speedR, 75);
+}
+
+void backward() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(speedL, 75);
+  analogWrite(speedR, 75);
+}
+
+void left() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(speedL, 0);
+  analogWrite(speedR, 150);
+}
+
+void right() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  analogWrite(speedL, 150);
+  analogWrite(speedR, 0);
+}
+
+void stopp() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  analogWrite(speedL, 0);
+  analogWrite(speedR, 0);
+}
+
+void loop() {
+  Ultrasonic();
+  Serial.print("DISTANCE:");
+  Serial.println(distance); // Send distance to ESP32
+
+  if (distance < 15 && distance > 0) {  // Ensure a valid distance
+    stopp();
+    delay(200);
+    backward();
+    delay(200);
+    right();
+    delay(200);
+  } else {
+    forward();
+  }
+
+  // Check if there's data from ESP32
+  if (Serial.available()) {
+    String receivedData = Serial.readStringUntil('\n');
+    Serial.println("Received from ESP32: " + receivedData);
+  }
+}
